@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Network-Operations</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="get_profile">Get Profile</string>
+    <string name="full_name_you_can_skip_this_section">Full Name (You can skip this section)</string>
+    <string name="register">Register</string>
+    <string name="status">Status:</string>
+    <string name="status_idle">Waiting for user action…</string>
+    <string name="status_loading">Loading…</string>
+    <string name="status_registered">Registered</string>
+    <string name="status_loggedIn">Logged in, you can check profile</string>
+    <string name="status_profile_retrieved">Profile Retrieved</string>
+</resources>
