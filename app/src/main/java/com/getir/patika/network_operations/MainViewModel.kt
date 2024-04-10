@@ -55,7 +55,7 @@ class MainViewModel(private val networkDataSource: NetworkDataSource) : ViewMode
                 .onFailure { throwable ->
                     _uiState.update {
                         it.copy(
-                            authState = AuthState.Error(throwable.message ?: "An error occurred")
+                            authState = AuthState.Error(GENERIC_ERROR)
                         )
                     }
                     throwable.printStackTrace()
@@ -72,10 +72,10 @@ class MainViewModel(private val networkDataSource: NetworkDataSource) : ViewMode
 
         viewModelScope.launch {
             networkDataSource.loginUser(userLoginDto)
-                .onFailure { throwable ->
+                .onFailure {
                     _uiState.update {
                         it.copy(
-                            authState = AuthState.Error(throwable.message ?: "An error occurred")
+                            authState = AuthState.Error(GENERIC_ERROR)
                         )
                     }
                 }
@@ -91,11 +91,11 @@ class MainViewModel(private val networkDataSource: NetworkDataSource) : ViewMode
     private fun getProfile() {
         if (authState !in listOf(AuthState.SignedIn, AuthState.ProfileRetrieved)
         ) {
-            _uiState.update { it.copy(authState = AuthState.Error("You need to sign in first")) }
+            _uiState.update { it.copy(authState = AuthState.Error(SIGN_IN_ERROR)) }
             return
         }
         if (userId == null) {
-            _uiState.update { it.copy(authState = AuthState.Error("User ID is empty")) }
+            _uiState.update { it.copy(authState = AuthState.Error(EMPTY_USER_ID)) }
             return
         }
 
@@ -110,10 +110,10 @@ class MainViewModel(private val networkDataSource: NetworkDataSource) : ViewMode
                             authState = AuthState.ProfileRetrieved
                         )
                     }
-                }.onFailure { throwable ->
+                }.onFailure {
                     _uiState.update {
                         it.copy(
-                            authState = AuthState.Error("An error occurred")
+                            authState = AuthState.Error(GENERIC_ERROR)
                         )
                     }
                 }
@@ -131,5 +131,9 @@ class MainViewModel(private val networkDataSource: NetworkDataSource) : ViewMode
                 return MainViewModel(networkDataSource) as T
             }
         }
+
+        private const val GENERIC_ERROR = "An error occurred, try again"
+        private const val SIGN_IN_ERROR = "You need to sign in first"
+        private const val EMPTY_USER_ID = "User ID is empty"
     }
 }
