@@ -1,6 +1,7 @@
 package com.getir.patika.network_operations
 
 import android.os.Bundle
+import android.view.View
 import android.widget.EditText
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -61,6 +62,16 @@ class MainActivity : AppCompatActivity() {
         scopeWithLifecycle {
             viewModel.uiState.map { it.authState }.distinctUntilChanged()
                 .collectLatest { authState ->
+                    val isEnabled = authState != AuthState.Loading
+                    listOf<View>(
+                        btnRegister,
+                        btnLogin,
+                        btnGetProfile,
+                        etEmail,
+                        etPassword,
+                        etFullName
+                    ).forEach { it.isEnabled = isEnabled }
+
                     tvStatus.text = when (authState) {
                         is AuthState.Error -> authState.message
                         AuthState.Idle -> getString(R.string.status_idle)

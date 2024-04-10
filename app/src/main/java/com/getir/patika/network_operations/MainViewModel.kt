@@ -7,7 +7,6 @@ import com.getir.patika.network_operations.data.NetworkDataSource
 import com.getir.patika.network_operations.data.model.AuthState
 import com.getir.patika.network_operations.data.model.MainEvent
 import com.getir.patika.network_operations.data.model.UiState
-import com.getir.patika.network_operations.data.model.UserDto
 import com.getir.patika.network_operations.data.model.UserLoginDto
 import com.getir.patika.network_operations.data.model.UserRegisterDto
 import com.getir.patika.network_operations.data.model.userProfileToString
@@ -21,21 +20,21 @@ class MainViewModel(private val networkDataSource: NetworkDataSource) : ViewMode
     private val _uiState = MutableStateFlow(UiState())
     val uiState = _uiState.asStateFlow()
 
-    private val email
-        get() = uiState.value.email
+    private val email get() = uiState.value.email
 
-    private val password
-        get() = uiState.value.password
+    private val password get() = uiState.value.password
 
-    private val fullName
-        get() = uiState.value.fullName
+    private val fullName get() = uiState.value.fullName
 
-    private val authState
-        get() = uiState.value.authState
+    private val authState get() = uiState.value.authState
 
-    private val userId
-        get() = uiState.value.userId
+    private val userId get() = uiState.value.userId
 
+    /**
+     * Handles various UI events and updates the UI state accordingly.
+     *
+     * @param event The [MainEvent] representing the user action.
+     */
     fun onEvent(event: MainEvent) {
         when (event) {
             MainEvent.GetProfileClicked -> getProfile()
@@ -49,59 +48,49 @@ class MainViewModel(private val networkDataSource: NetworkDataSource) : ViewMode
 
     private fun onRegister() {
         _uiState.update { it.copy(authState = AuthState.Loading) }
+        val userRegisterDto = UserRegisterDto(fullName, email, password)
 
-        UserRegisterDto(
-            fullName = fullName,
-            email = email,
-            password = password
-        ).let { userRegisterDto ->
-            viewModelScope.launch {
-                networkDataSource.registerUser(userRegisterDto)
-                    .onFailure { throwable ->
-                        _uiState.update {
-                            it.copy(
-                                authState = AuthState.Error(
-                                    throwable.message ?: "An error occurred"
-                                )
-                            )
-                        }
-                        throwable.printStackTrace()
+        viewModelScope.launch {
+            networkDataSource.registerUser(userRegisterDto)
+                .onFailure { throwable ->
+                    _uiState.update {
+                        it.copy(
+                            authState = AuthState.Error(throwable.message ?: "An error occurred")
+                        )
                     }
-                    .onSuccess {
-                        println(it)
-                        _uiState.update { it.copy(authState = AuthState.Registered) }
-                    }
-            }
+                    throwable.printStackTrace()
+                }
+                .onSuccess {
+                    _uiState.update { state -> state.copy(authState = AuthState.Registered) }
+                }
         }
     }
 
     private fun onLogin() {
         _uiState.update { it.copy(authState = AuthState.Loading) }
+        val userLoginDto = UserLoginDto(email, password)
 
-        UserLoginDto(
-            email = email,
-            password = password
-        ).let { userLoginDto ->
-            viewModelScope.launch {
-                networkDataSource.loginUser(userLoginDto)
-                    .onFailure { throwable ->
-                        _uiState.update {
-                            it.copy(
-                                authState = AuthState.Error(
-                                    throwable.message ?: "An error occurred"
-                                )
-                            )
-                        }
+        viewModelScope.launch {
+            networkDataSource.loginUser(userLoginDto)
+                .onFailure { throwable ->
+                    _uiState.update {
+                        it.copy(
+                            authState = AuthState.Error(throwable.message ?: "An error occurred")
+                        )
                     }
-                    .onSuccess { userId ->
-                        _uiState.update { it.copy(authState = AuthState.SignedIn, userId = userId) }
-                    }
-            }
+                }
+                .onSuccess { userId ->
+                    _uiState.update { it.copy(authState = AuthState.SignedIn, userId = userId) }
+                }
         }
     }
 
+    /**
+     * Retrieves the user profile if the user is signed in and has a valid user ID.
+     */
     private fun getProfile() {
-        if (authState != AuthState.SignedIn) {
+        if (authState !in listOf(AuthState.SignedIn, AuthState.ProfileRetrieved)
+        ) {
             _uiState.update { it.copy(authState = AuthState.Error("You need to sign in first")) }
             return
         }
@@ -124,18 +113,17 @@ class MainViewModel(private val networkDataSource: NetworkDataSource) : ViewMode
                 }.onFailure { throwable ->
                     _uiState.update {
                         it.copy(
-                            authState = AuthState.Error(
-                                throwable.message ?: "An error occurred"
-                            )
+                            authState = AuthState.Error("An error occurred")
                         )
                     }
                 }
         }
     }
 
-
-
     companion object {
+        /**
+         * Factory for creating [MainViewModel] instances.
+         */
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -145,4 +133,3 @@ class MainViewModel(private val networkDataSource: NetworkDataSource) : ViewMode
         }
     }
 }
-
